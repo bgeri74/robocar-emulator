@@ -8,6 +8,7 @@
  * @section LICENSE
  *
  * Copyright (C) 2014 Norbert Bátfai, batfai.norbert@inf.unideb.hu
+ * Copyright (C) 2016, Gergő Bogacsovics, bgeri74@gmail.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +27,8 @@
  * Robocar City Emulator and Robocar World Championship
  *
  * desc
+ * 
+ * 
  *
  */
 
@@ -34,6 +37,7 @@
 
 char data[524288];
 
+// Függvény a gangster ágensek lekérésére.
 std::vector<justine::sampleclient::MyShmClient::Gangster> justine::sampleclient::MyShmClient::gangsters ( boost::asio::ip::tcp::socket & socket, int id,
     osmium::unsigned_object_id_type cop )
 {
@@ -47,6 +51,7 @@ std::vector<justine::sampleclient::MyShmClient::Gangster> justine::sampleclient:
 
   length = socket.read_some ( boost::asio::buffer ( data ), err );
 
+  // Kivétel kezelés.
   if ( err == boost::asio::error::eof )
     {
 
@@ -59,30 +64,37 @@ std::vector<justine::sampleclient::MyShmClient::Gangster> justine::sampleclient:
       throw boost::system::system_error ( err );
     }
 
-  /* reading all gangsters into a vector */
+  /* A gangsterek adatait az alábbi változókban fogjuk tárolni.  */
   int idd {0};
   unsigned f, t, s;
+  
+  // Számlálók.
   int n {0};
   int nn {0};
+  
+  // A gangsterek vektora.
   std::vector<Gangster> gangsters;
 
+  // Beolvassuk a gangsterek adatait.
   while ( std::sscanf ( data+nn, "<OK %d %u %u %u>%n", &idd, &f, &t, &s, &n ) == 4 )
     {
       nn += n;
       gangsters.push_back ( Gangster {idd, f, t, s} );
     }
 
-  std::sort ( gangsters.begin(), gangsters.end(), [this, cop] ( Gangster x, Gangster y )
+  /*std::sort ( gangsters.begin(), gangsters.end(), [this, cop] ( Gangster x, Gangster y )
   {
     return dst ( cop, x.to ) < dst ( cop, y.to );
-  } );
+  } );*/
 
   std::cout.write ( data, length );
   std::cout << "Command GANGSTER sent." << std::endl;
+  //std::this_thread::sleep_for ( std::chrono::milliseconds ( 20000 ) );
 
   return gangsters;
 }
 
+// Rendőrök inicializálása.
 std::vector<justine::sampleclient::MyShmClient::Cop> justine::sampleclient::MyShmClient::initcops ( boost::asio::ip::tcp::socket & socket )
 {
 
@@ -95,6 +107,7 @@ std::vector<justine::sampleclient::MyShmClient::Cop> justine::sampleclient::MySh
   length = socket.read_some ( boost::asio::buffer ( data ), err );
 
 
+  // Kivételkezelés.
   if ( err == boost::asio::error::eof )
     {
 
@@ -107,14 +120,19 @@ std::vector<justine::sampleclient::MyShmClient::Cop> justine::sampleclient::MySh
       throw boost::system::system_error ( err );
     }
 
-  /* reading all gangsters into a vector */
+  /* A rendőrök főbb adatait ezekben fogjuk tárolni. */
   int idd {0};
   int f, t;
   char c;
+  
+  // Számlálók.
   int n {0};
   int nn {0};
+  
+  // A rendőrök vektora.
   std::vector<Cop> cops;
 
+  // A rendőrök adatait egyesével kinyerjük.
   while ( std::sscanf ( data+nn, "<OK %d %d/%d %c>%n", &idd, &f, &t, &c, &n ) == 4 )
     {
       nn += n;
@@ -190,6 +208,7 @@ void justine::sampleclient::MyShmClient::pos ( boost::asio::ip::tcp::socket & so
   std::cout.write ( data, length );
   std::cout << "Command POS sent." << std::endl;
 }
+
 
 void justine::sampleclient::MyShmClient::car ( boost::asio::ip::tcp::socket & socket, int id, unsigned *f, unsigned *t, unsigned* s )
 {
@@ -330,44 +349,131 @@ void justine::sampleclient::MyShmClient::start10 ( boost::asio::io_service& io_s
   boost::asio::ip::tcp::socket socket ( io_service );
   boost::asio::connect ( socket, iterator );
 
+  // Rendőrök vektora, amit be is állítunk rögtön.
   std::vector<Cop> cops = initcops ( socket );
 
-  unsigned int g {0u};
+  // A rendőrök adatait ezekben a változókban tároljuk.
+  unsigned int g {0u}; // Ez jelzi majd, melyik gangstert szeretnénk üldözőbe venni.
   unsigned int f {0u};
   unsigned int t {0u};
   unsigned int s {0u};
+  
+  // Jelzi számunkra, hogy a rendőr ágensek száma nagyobb-e mint a gangster ágensek-é.
+  // Ez azért fontos, mert 1 gangsterre 1 rendőrt állítunk, viszont ha van szabad rendőrünk, akkor azt fel szeretnénk használni.
+  bool tooManyCops = false;
 
+  // A gangsterek vektora.
   std::vector<Gangster> gngstrs;
-
+ 
   for ( ;; )
     {
-      std::this_thread::sleep_for ( std::chrono::milliseconds ( 200 ) );
-
-      for ( auto cop:cops )
+	std::this_thread::sleep_for ( std::chrono::milliseconds ( 200 ) );
+	
+	//  Ha a gangsterek száma kevesebb mint a rendőrök száma, azt jelezzük.
+	if(gngstrs.size() < cops.size()){
+	  tooManyCops = true;
+	}
+	
+	// Beállítjuk a ciklusszámlálót.
+	int i = 0;
+	
+	//std::cout <<"Distances:\n";
+	
+	// Végigiterálunk a rendőrágenseken, és a legelőnyösebb rendőrt (ill. gangstert) bemozgatjuk a vektor adott helyére.
+        //for ( std::vector<Cop>::iterator m = cops.begin(); m < cops.end(); m++ )
+	for(auto cop:cops)
         {
-          car ( socket, cop, &f, &t, &s );
+	    
+	    // Frissítjük a gngstrs vektorunkat.
+	    gngstrs = gangsters ( socket, cops[0], t );
+	    
+	    //unsigned int gg {0u};
+	    unsigned int ff {0u};
+	    unsigned int tt {0u};
+	    unsigned int ss {0u};
+	    
+	    unsigned long minDistance = std::numeric_limits<double>::max(); // Minden egyes körben beállítjuk a minimális távolságot.
+	    
+	    // A számunkra előnyös gangster ill. rendőr ágensek indexeit tároljuk ezekben.
+	    int minGangIndex = i;
+	    int minCopIndex = i;
+		 
+		  
+	    //std::cout << "Distances: "<<std::endl;
+	    
+	    // Rendezési algoritmus kezdete.
+	    for(int k = i, copSize = cops.size(); k < copSize; k++){
+		    
+		// Aktuális rendőr.
+		auto copp = cops[k];
+		// Kinyerjük a rendőr ágens adatait.
+		car ( socket, copp, &ff, &tt, &ss );
+			
+		for(int j = i, gangSize = gngstrs.size(); j < gangSize; j++ ){
+				
+		    auto gangSta = gngstrs[j];
+		    auto tempDistance = dst(tt, gangSta.to);
+		    //std::cout<<"TempDistance: "<<tempDistance<<std::endl;
+			      
+		    // Ha az aktuális távolság kisebb, mint a minimumtávolság, beállítjuk az indexeket, és a távolságot.
+		    if( tempDistance < minDistance){
+			minDistance = tempDistance;
+			minGangIndex = j;
+			minCopIndex = k;
+		    }
+				      
+		  }
+		  
+	      }
+		  
+		    
+	      std::swap(gngstrs[i], gngstrs[minGangIndex]);
+	      std::swap(cops[i], cops[minCopIndex]);
+	      //std::cout<<"MinDistance: "<<minDistance<<std::endl;
+	      
+	      // Rendezési algoritmus vége
+	    
+	      // Lekérjük az adott rendőrágens főbb adatait, pl. pozícióját.
+	      car ( socket, cop, &f, &t, &s );
+	      
+	      // Ha van gangster a szerveren, akkor beállítjuk az ágenseket, különben 0-val jelezzük az ellentétjét.
+	      if ( gngstrs.size() > 0 )
+		  if(i >= gngstrs.size()){
+		    //std::cout<<"Setting COP#" <<i<<" to GANGSTER#" << i%gngstrs.size()<<std::endl;
+		    g = gngstrs[i%gngstrs.size()].to;
+		  }
+		  else{
+		    //std::cout<<"Setting COP#" <<i<<" to GANGSTER#" << i<<std::endl;
+		    g = gngstrs[i].to;
+		  }
 
-          gngstrs = gangsters ( socket, cop, t );
+	      else{
+		g = 0;
+		//std::cout << "COP NO." << i << "CANT CHASE ANYTHING"<<std::endl;
+	      }
+	      
+	      //std::this_thread::sleep_for ( std::chrono::milliseconds ( 2000 ) );
+	    
+	      // Ha van gangster, akkor az adott rendőrkocsit el is inditjuk felé.
+	      if ( g > 0 )
+		{
 
-          if ( gngstrs.size() > 0 )
-            g = gngstrs[0].to;
-          else
-            g = 0;
+		  std::vector<osmium::unsigned_object_id_type> path = hasDijkstraPath ( t, g );
 
-          if ( g > 0 )
-            {
+		  if ( path.size() > 1 )
+		    {
 
-              std::vector<osmium::unsigned_object_id_type> path = hasDijkstraPath ( t, g );
+		      std::copy ( path.begin(), path.end(),
+		      std::ostream_iterator<osmium::unsigned_object_id_type> ( std::cout, " -> " ) );
 
-              if ( path.size() > 1 )
-                {
-
-                  std::copy ( path.begin(), path.end(),
-                              std::ostream_iterator<osmium::unsigned_object_id_type> ( std::cout, " -> " ) );
-
-                  route ( socket, cop, path );
-                }
-            }
+		      route ( socket, cop, path );
+		    }
+		}
+	      
+	      // Ciklusszámláló növelése.
+	      i++;
         }
+	
+        
     }
 }
