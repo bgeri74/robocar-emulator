@@ -1,3 +1,5 @@
+This project was forked from the original Robocar GitHub repository(https://github.com/nbatfai/robocar-emulator).
+
 # Introduction #
 Robocar World Championship is intended to offer a common research platform for developing urban traffic control algorithms and for investigating the relationship between smart cities and robot cars with particular attention to spread of robot cars of the near future. At the heart of this initiative is the Robocar City Emulator. It will enable researchers to test and validate their theories and models.
 
