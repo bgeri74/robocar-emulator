@@ -8,7 +8,8 @@
  * @section LICENSE
  *
  * Copyright (C) 2014 Norbert Bátfai, batfai.norbert@inf.unideb.hu
- *
+ * Copyright (C) 2016, Gergő Bogacsovics, bgeri74@gmail.com
+ * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -26,6 +27,7 @@
  * Robocar City Emulator and Robocar World Championship
  *
  * desc
+ * 
  *
  */
 
@@ -82,11 +84,11 @@ int main ( int argc, char* argv[] )
        team.assign ( "Norbi" );
      
      // If you use this sample you should add your copyright information here too:
-     /*
-     std::cout << "This SHM Client program has been modified by <Your Name>" << std::endl
-     << "Copyright (C) 2014, 2015 Norbert Bátfai" << std::endl
-     << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>" << std::endl
-     */
+     
+     std::cout << "This SHM Client program has been modified by Gergő Bogacsovics" << std::endl
+     << "Copyright (C) 2014, 2015, 2016 Norbert Bátfai" << std::endl
+     << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>" << std::endl;
+     
 
      // Do not remove this copyright notice!
      std::cout << "Robocar City Emulator and Robocar World Championship, Sample (My) SHM Client" << std::endl
