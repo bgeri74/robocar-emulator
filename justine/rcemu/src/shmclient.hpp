@@ -49,6 +49,7 @@
 #include <limits>
 
 #include <memory>
+#include <google/protobuf/descriptor.h>
 
 namespace justine
 {
