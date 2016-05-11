@@ -100,7 +100,7 @@ std::vector<justine::sampleclient::MyShmClient::Cop> justine::sampleclient::MySh
 
   boost::system::error_code err;
 
-  size_t length = std::sprintf ( data, "<init guided %s 1 c>", m_teamname.c_str() );
+  size_t length = std::sprintf ( data, "<init guided %s 10 c>", m_teamname.c_str() );
 
   socket.send ( boost::asio::buffer ( data, length ) );
 
@@ -383,6 +383,7 @@ void justine::sampleclient::MyShmClient::start10 ( boost::asio::io_service& io_s
         //for ( std::vector<Cop>::iterator m = cops.begin(); m < cops.end(); m++ )
 	for(auto cop:cops)
         {
+	  //for(std::vector<Cop>::iterator i = cops.begin(); i != cops.end(); i++)
 	    
 	    // Frissítjük a gngstrs vektorunkat.
 	    gngstrs = gangsters ( socket, cops[0], t );
@@ -429,7 +430,8 @@ void justine::sampleclient::MyShmClient::start10 ( boost::asio::io_service& io_s
 		    
 	      std::swap(gngstrs[i], gngstrs[minGangIndex]);
 	      std::swap(cops[i], cops[minCopIndex]);
-	      //std::cout<<"MinDistance: "<<minDistance<<std::endl;
+	      
+		  //std::cout<<"#"<<i<<" MinDistance: "<<minDistance<<std::endl;
 	      
 	      // Rendezési algoritmus vége
 	    
